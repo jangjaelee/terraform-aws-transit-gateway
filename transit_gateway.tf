@@ -1,3 +1,11 @@
+resource "null_resource" "validate_module_name" {
+  count = local.module_name == var.tags["TerraformModuleName"] ? 0 : "Please check that you are using the Terraform module"
+}
+
+resource "null_resource" "validate_module_version" {
+  count = local.module_version == var.tags["TerraformModuleVersion"] ? 0 : "Please check that you are using the Terraform module"
+}
+
 resource "aws_ec2_transit_gateway" "this" {
   description      = var.description
   amazon_side_asn  = var.amazon_side_asn
@@ -9,9 +17,8 @@ resource "aws_ec2_transit_gateway" "this" {
   auto_accept_shared_attachments  = var.enable_auto_accept_shared_attachments ? "enable" : "disable"
 
   tags = merge(
-    {
-      "Name" = format("%s-tgw", var.tgw_name)
-    },
-    local.common_tags,
-  )
+    var.tags, tomap(
+      {"Name" = format("%s-%s-tgw", var.prefix, var.tgw_name)}
+    )
+  )  
 }

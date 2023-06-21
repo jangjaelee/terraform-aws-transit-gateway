@@ -14,6 +14,16 @@ variable "amazon_side_asn" {
   type        = number
 }
 
+variable "prefix" {
+  description = "prefix for aws resources and tags"
+  type = string
+}
+
+variable "tags" {
+  description = "tag map"
+  type = map(string)
+}
+
 variable "enable_dns_support" {
   description = "Whether DNS support is enabled"
   type        = bool
@@ -42,9 +52,4 @@ variable "enable_auto_accept_shared_attachments" {
   description = "Whether resource attachment requests are automatically accepted"
   type        = bool
   default     = true
-}
-
-variable "env" {
-  description = "Environment"
-  type        = string
 }

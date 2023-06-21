@@ -10,69 +10,70 @@ These types of resources are supported:
 ## Usage
 ### Create Transit Gateway
 
-main.tf
+`main.tf`
 ```hcl
 module "tgw" {
   source = "git@github.com:jangjaelee/terraform-aws-transit-gateway.git"
 
   tgw_name         = var.tgw_name
+  prefix           = var.prefix
+  tags             = var.tags
   description      = var.description
   amazon_side_asn  = var.amazon_side_asn
   enable_dns_support      = var.enable_dns_support
   enable_vpn_ecmp_support = var.enable_vpn_ecmp_support
-
   enable_default_route_table_association = var.enable_default_route_table_association
   enable_default_route_table_propagation = var.enable_default_route_table_propagation
   enable_auto_accept_shared_attachments  = var.enable_auto_accept_shared_attachments
-
-  env = var.env
 }
 ```
+---
 
-providers.tf
+`provider.tf`
 ```hcl
-provider "aws" {
-  region = var.region
+provider  "aws" {
+  region  =  var.region
   allowed_account_ids = var.account_id
-  profile = "eks_service"
+  profile = "default"
 }
 ```
+---
 
-terraform.tf
+`terraform.tf`
 ```hcl
 terraform {
-  required_version = ">= 0.15.0"
-
+  required_version = ">= 1.1.3"
+  
   required_providers {
     aws = {
       source = "hashicorp/aws"
-      version = ">= 3.43.0"
+      version = "~> 3.72"
     }
   }
 
   backend "s3" {
-    bucket = "kubesphere-terraform-state-backend"
-    key = "kubesphere/tgw/terraform.tfstate"
-    dynamodb_table = "kubesphere-terraform-state-locks"
-    encrypt = true
+    bucket = "kubesphere-terraform-state-backend" # S3 bucket 이름 변경(필요 시)
+    key = "kubesphere/tgw/terraform.state"
     region = "ap-northeast-2"
-    profile = "eks_service"
+    dynamodb_table = "kubesphere-terraform-state-locks" # 다이나모 테이블 이름 변경(필요 시)
+    encrypt = true
+    profile = "default"
   }
 }
 ```
+---
 
-variables.tf
+`variables.tf`
 ```hcl
 variable "region" {
   description = "AWS Region"
-  type        = string
-  default     = "ap-northeast-2"
+  type = string
+  default = "ap-northeast-2"
 }
 
 variable "account_id" {
   description = "List of Allowed AWS account IDs"
-  type        = list(string)
-  default     = ["123456789012"]
+  type = list(string)
 }
 
 variable "tgw_name" {
@@ -88,6 +89,16 @@ variable "description" {
 variable "amazon_side_asn" {
   description = "Private Autonomous System Number (ASN) for the Amazon side of a BGP session. The range is 64512 to 65534"
   type        = number
+}
+
+variable "prefix" {
+  description = "prefix for aws resources and tags"
+  type = string
+}
+
+variable "tags" {
+  description = "tag map"
+  type = map(string)
 }
 
 variable "enable_dns_support" {
@@ -119,30 +130,32 @@ variable "enable_auto_accept_shared_attachments" {
   type        = bool
   default     = true
 }
-
-variable "env" {
-  description = "Environment"
-  type        = string
-  default     = ""
-}
 ```
+---
 
-terraform.tfvars
+`terraform.tfvars`
 ```hcl
 region      = "ap-northeast-2"
 account_id  = ["123456789012"]
-tgw_name    = "KubeSphere-dev"
-description = "chai infra transit gateway"
+prefix      = "dev"
+tgw_name    = "common"
+description = "Main Transit Gateway"
 amazon_side_asn                        = "64512"
 enable_dns_support                     = true
 enable_vpn_ecmp_support                = true
-enable_default_route_table_association = true
-enable_default_route_table_propagation = true
-enable_auto_accept_shared_attachments  = true
-env = "dev"
-```
+enable_default_route_table_association = false
+enable_default_route_table_propagation = false
+enable_auto_accept_shared_attachments  = false
 
-output.tf
+tags = {
+    "CreatedByTerraform" = "true"
+    "TerraformModuleName" = "terraform-aws-module-transit-gateway"
+    "TeffaformModuleVersion" = "v1.0.0"
+}
+```
+---
+
+`outputs.tf`
 ```hcl
 output "tgw_arn" {
   value = module.tgw.tgw_arn
